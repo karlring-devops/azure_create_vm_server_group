@@ -148,20 +148,6 @@ function az_create_vm-availability-set(){
           #       export AZ_DISK_SPARE_NAME=${diskName}
           # }
 
-function az_disk_attach(){
-      diskNumber=${1}
-      diskSizeGiB=${2}
-      vmName="${3}"
-      diskName="disk-${AZ_RESOURCE_GROUP_NAME}-1-${diskNumber}"
-
-      az vm disk attach -g ${AZ_RESOURCE_GROUP_NAME} \
-             --vm-name ${vmName} \
-             --name ${diskName} \
-             --new \
-             --size-gb ${diskSizeGiB}
-}
-
-
 function az_create_vm_machine(){
     azenv az_create_vm_machine
     # for i in `seq 1 8`; do
@@ -180,13 +166,25 @@ function az_create_vm_machine(){
             --no-wait \
             --accelerated-networking true \
             --nsg ${networkServiceGroup} \
-            --ssh-key-name ${sshKeyName} \
-            --attach-data-disks ${attachDiskName}
+            --ssh-key-name ${sshKeyName} #\
+            #--attach-data-disks ${attachDiskName}
     # done
             # \ # --nics ${AZ_VM_NET_PRIMARY_NIC}-$i \
             # --custom-data `pwd`/az-cloud-init.txt \
 }
 
+function az_disk_attach(){
+      diskNumber=${1}
+      diskSizeGiB=${2}
+      vmName="${3}"
+      diskName="disk-${AZ_RESOURCE_GROUP_NAME}-1-${diskNumber}"
+
+      az vm disk attach -g ${AZ_RESOURCE_GROUP_NAME} \
+             --vm-name ${vmName} \
+             --name ${diskName} \
+             --new \
+             --size-gb ${diskSizeGiB}
+}
 
 #/***********************************************************************/#
 #| BUILD SERVER
@@ -195,24 +193,45 @@ AZ_CLUSTER_GROUP_NAME=${1}        #-- dtrprivate
 AZ_CLUSTER_DISK_ATTACH_SIZE=${2}  #-- 128
 
 function az_server_create(){
-          azenv az_server_create
-					az_create_resource_group
+    azenv az_server_create
+		az_create_resource_group
 
-					az_create_network-ip-public ${AZ_PUBLIC_IP}
-					az_create_network-vnet
-					az_create_network-group-service ${AZ_NET_SVC_GROUP}
-					az_create_network-group-service "vm-${AZ_RESOURCE_GROUP_NAME}-1-nsg"
-                    az_create_network_group_service_rules_rke "vm-${AZ_RESOURCE_GROUP_NAME}-1-nsg"
+		az_create_network-ip-public ${AZ_PUBLIC_IP}
+		az_create_network-vnet
+		az_create_network-group-service ${AZ_NET_SVC_GROUP}
+		az_create_network-group-service "vm-${AZ_RESOURCE_GROUP_NAME}-1-nsg"
+        az_create_network_group_service_rules_rke "vm-${AZ_RESOURCE_GROUP_NAME}-1-nsg"
 
-					az_create_sshkeys "sshkey-${AZ_RESOURCE_GROUP_NAME}-vm-1"
+		az_create_sshkeys "sshkey-${AZ_RESOURCE_GROUP_NAME}-vm-1"
 
-					az_create_vm-availability-set
-					az_create_vm_machine "${AZ_VM_NAME_ROOT}-1" "vm-${AZ_RESOURCE_GROUP_NAME}-1-nsg" "sshkey-${AZ_RESOURCE_GROUP_NAME}-vm-1" ${AZ_DISK_SPARE_NAME}
-                    az_disk_attach 1 ${AZ_CLUSTER_DISK_ATTACH_SIZE} "${AZ_VM_NAME_ROOT}-1" 
+		az_create_vm-availability-set
+		az_create_vm_machine "${AZ_VM_NAME_ROOT}-1" "vm-${AZ_RESOURCE_GROUP_NAME}-1-nsg" "sshkey-${AZ_RESOURCE_GROUP_NAME}-vm-1" ${AZ_DISK_SPARE_NAME}
+    az_disk_attach 1 ${AZ_CLUSTER_DISK_ATTACH_SIZE} "${AZ_VM_NAME_ROOT}-1" 
           
 
 }
 
+# No public key is provided. A key pair is being generated for you.
+# Private key is saved to "/Users/admin/.ssh/1640408810_870048".
+# Public key is saved to "/Users/admin/.ssh/1640408810_870048.pub".
+
+sshKeyFix(){
+  OLD_NAME=${1}                       #--- 1640408810_870048
+  NEW_NAME="${AZ_VM_NAME_ROOT}-1"     #--- vm-rg-rke2private-1-1
+  SSH_DIR=/Users/admin/.ssh
+
+  mv ${SSH_DIR}/${OLD_NAME} ${SSH_DIR}/${NEW_NAME}
+  mv ${SSH_DIR}/${OLD_NAME}.pub ${SSH_DIR}/${NEW_NAME}.pub
+  chmod 600 ${SSH_DIR}/${NEW_NAME}*
+}
+
+sshdtr(){
+  vmName="${AZ_VM_NAME_ROOT}-1" 
+  ifile=/Users/admin/.ssh/${vmName}
+  auth="azureuser@${vmName}"
+  ssh -i ${ifile} ${auth}
+}
+# 20.69.126.36 vm-rg-rke2private-1-1 vm-rg-rke2private-1-1.westus2.cloudapp.azure.com
 # az_server_create
 
 
