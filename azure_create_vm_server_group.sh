@@ -154,7 +154,7 @@ function az_disk_attach(){
       vmName="${3}"
       diskName="disk-${AZ_RESOURCE_GROUP_NAME}-1-${diskNumber}"
 
-      echo az vm disk attach -g ${AZ_RESOURCE_GROUP_NAME} \
+      az vm disk attach -g ${AZ_RESOURCE_GROUP_NAME} \
              --vm-name ${vmName} \
              --name ${diskName} \
              --new \
@@ -191,7 +191,8 @@ function az_create_vm_machine(){
 #/***********************************************************************/#
 #| BUILD SERVER
 #/-----------------------------------------------------------------------/#
-AZ_CLUSTER_GROUP_NAME=${1} #--dtrprivate
+AZ_CLUSTER_GROUP_NAME=${1}        #-- dtrprivate
+AZ_CLUSTER_DISK_ATTACH_SIZE=${2}  #-- 128
 
 function az_server_create(){
           azenv az_server_create
@@ -207,7 +208,7 @@ function az_server_create(){
 
 					az_create_vm-availability-set
 					az_create_vm_machine "${AZ_VM_NAME_ROOT}-1" "vm-${AZ_RESOURCE_GROUP_NAME}-1-nsg" "sshkey-${AZ_RESOURCE_GROUP_NAME}-vm-1" ${AZ_DISK_SPARE_NAME}
-                    az_disk_attach 1 75 "${AZ_VM_NAME_ROOT}-1" 
+                    az_disk_attach 1 ${AZ_CLUSTER_DISK_ATTACH_SIZE} "${AZ_VM_NAME_ROOT}-1" 
           
 
 }
